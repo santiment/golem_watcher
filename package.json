@@ -1,11 +1,11 @@
 {
   "name": "golem-watcher",
   "version": "0.1.0",
-  "description": "ethereum based authentication microservice",
+  "description": "Watcher for Golem BatchTransfer events",
   "main": "index.js",
   "scripts": {
     "test": "./node_modules/.bin/mocha --reporter spec",
-    "start": "micro -p 3001"
+    "start": "micro -p 3000"
   },
   "repository": {
     "type": "git",

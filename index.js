@@ -1,5 +1,6 @@
 /*jslint es6 */
 "use strict";
+const { send } = require('micro')
 const url = require('url');
 const Web3 = require('web3');
 const Influx = require('influx');
@@ -26,9 +27,22 @@ const influx = new Influx.InfluxDB({
 });
 
 console.log(`Creating 'golem_network_data' InfluxDB database`);
-influx.createDatabase('golem_network_data');
 
-function writePoints(from, to, value, closureTime, blockNumber, blockTimestamp) {
+influx.createDatabase('golem_network_data')
+  .then(success => {
+    console.log("Sucessfully created database 'golem_network_data'. Starting the work")
+    // Execute the `getPastEvents` every 5 minutes
+    work();
+    setInterval(work, 5 * 60 * 1000);
+
+  })
+  .catch(err => {
+    console.error(err => {
+      "Cannot create db"
+    })
+  })
+
+const writePoints = (from, to, value, closureTime, blockNumber, blockTimestamp) => {
   influx.writePoints([{
     measurement: 'transfers',
     fields: {
@@ -75,14 +89,23 @@ var batchTransferAbi = [{
 
 var golemContract = new web3.eth.Contract(batchTransferAbi, GOLEM_CONTRACT_ADDRESS);
 
-function getPastEvents(startBlockNumber) {
+
+const healthcheckInflux = () => {
+  return influx.query("show measurements")
+}
+
+const healthcheckParity = () => {
+  return web3.eth.getBlockNumber()
+}
+
+const getPastEvents = (startBlockNumber) => {
   console.log(`Get past events startinng from ${startBlockNumber} block number`);
 
   golemContract.getPastEvents('BatchTransfer', {
       fromBlock: startBlockNumber,
       toBlock: 'latest'
     })
-    .then(function (events) {
+    .then((events) => {
       events.forEach(function (batchTranfer) {
         var {
           blockNumber,
@@ -95,35 +118,43 @@ function getPastEvents(startBlockNumber) {
         } = batchTranfer
 
         web3.eth.getBlock(blockNumber) // slow
-          .then(function(block){
+          .then((block) => {
             writePoints(from, to, value, closureTime, blockNumber, block.timestamp)
+          })
+          .catch(err => {
+            console.error(`Error saving data with block number ${blockNumber} to InfluxDB! ${err.stack}`)
           })
       })
     })
+    .catch(err => {
+      console.error(`Error getting past events since block number ${blockNumber}! ${err.stack}`)
+    })
 }
 
-function work() {
+const work = () => {
   console.log(`Selecting the MAX block number from the database`);
 
   influx.query("select MAX(block_number) from transfers")
-  .then(blockNumberInfo => {
-    const blockNumber = blockNumberInfo[0].max || GOLEM_TOKEN_START_BLOCK
-    getPastEvents(blockNumber)
-  })
+    .then(blockNumberInfo => {
+      const blockNumber = blockNumberInfo[0].max || GOLEM_TOKEN_START_BLOCK
+      getPastEvents(blockNumber)
+    })
+    .catch(err => {
+      console.error(`Error fetching the MAX block number from the database! Error stack: ${err.stack}`)
+    })
 }
 
-// Execute the `getPastEvents` every 5 minutes
-work();
-setInterval(work, 5 * 60 * 1000);
-
 //======================================================
-module.exports = async function (request, response) {
-  let req = url.parse(request.url, true);
-  let q = req.query;
+module.exports = async (request, response) => {
+  const req = url.parse(request.url, true);
+  const q = req.query;
 
   switch (req.pathname) {
     case '/healthcheck':
-      return send(response, 200, "ok");
+      return healthcheckInflux()
+        .then(healthcheckParity())
+        .then((result) => send(response, 200, "ok"))
+        .catch((err) => send(response, 500, `Connection to influx or parity failed. ${err}`))
 
     default:
       return send(response, 404, 'Not found');
