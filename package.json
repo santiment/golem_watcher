@@ -1,0 +1,35 @@
+{
+  "name": "golem-watcher",
+  "version": "0.1.0",
+  "description": "ethereum based authentication microservice",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --reporter spec",
+    "start": "micro -p 3001"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/santiment/golem_watcher.git"
+  },
+  "author": "Santiment",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/santiment/golem_watcher/issues"
+  },
+  "homepage": "https://github.com/santiment/golem_watcher#readme",
+  "dependencies": {
+    "influx": "^5.0.7",
+    "jslint": "^0.12.0",
+    "micro": "^9.0.0",
+    "web3": "^1.0.0-beta.34"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "chai-string": "^1.4.0",
+    "mocha": "^4.0.1",
+    "request-promise": "^4.2.2",
+    "seneca-jsonrest-api": "^0.3.1",
+    "test-listen": "^1.1.0",
+    "request": "^2.34"
+  }
+}
