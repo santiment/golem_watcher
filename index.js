@@ -1,12 +1,14 @@
 /*jslint es6 */
 "use strict";
-const { send } = require('micro')
+const {
+  send
+} = require('micro')
 const url = require('url');
 const Web3 = require('web3');
 const Influx = require('influx');
 const GOLEM_TOKEN_START_BLOCK = 5385618;
 const GOLEM_CONTRACT_ADDRESS = '0xA7dfb33234098c66FdE44907e918DAD70a3f211c'
-
+const GOLEM_DATABASE_NAME = 'golem_network_data'
 // client to the influx db
 const influx = new Influx.InfluxDB({
   host: process.env.INFLUXDB_HOST || 'localhost',
@@ -25,22 +27,6 @@ const influx = new Influx.InfluxDB({
     tags: []
   }]
 });
-
-console.log(`Creating 'golem_network_data' InfluxDB database`);
-
-influx.createDatabase('golem_network_data')
-  .then(success => {
-    console.log("Sucessfully created database 'golem_network_data'. Starting the work")
-    // Execute the `getPastEvents` every 5 minutes
-    work();
-    setInterval(work, 5 * 60 * 1000);
-
-  })
-  .catch(err => {
-    console.error(err => {
-      "Cannot create db"
-    })
-  })
 
 const writePoints = (from, to, value, closureTime, blockNumber, blockTimestamp) => {
   influx.writePoints([{
@@ -88,7 +74,6 @@ var batchTransferAbi = [{
 }];
 
 var golemContract = new web3.eth.Contract(batchTransferAbi, GOLEM_CONTRACT_ADDRESS);
-
 
 const healthcheckInflux = () => {
   return influx.query("show measurements")
@@ -140,9 +125,28 @@ const work = () => {
       getPastEvents(blockNumber)
     })
     .catch(err => {
-      console.error(`Error fetching the MAX block number from the database! Error stack: ${err.stack}`)
+      console.error(`Error fetching the MAX block number from the database! \nError stack:\n ${err.stack}`)
     })
 }
+
+const init = () => {
+  influx.createDatabase(GOLEM_DATABASE_NAME)
+    .then(success => {
+      console.log(`Sucessfully created database ${GOLEM_DATABASE_NAME}. Starting the work.`)
+
+      // Execute the `work` every 5 minutes
+      work();
+      setInterval(work, 5 * 60 * 1000);
+
+    })
+    .catch(err => {
+      console.error(`Cannot create database ${GOLEM_DATABASE_NAME}. \nError stack:\n ${err.stack}`)
+      console.log(`Will try to create the database and start the work in 5 minutes.`)
+      setTimeout(init, 5 * 60 * 1000);
+    })
+}
+
+init()
 
 //======================================================
 module.exports = async (request, response) => {
@@ -154,7 +158,7 @@ module.exports = async (request, response) => {
       return healthcheckInflux()
         .then(healthcheckParity())
         .then((result) => send(response, 200, "ok"))
-        .catch((err) => send(response, 500, `Connection to influx or parity failed. ${err}`))
+        .catch((err) => send(response, 500, `Connection to influx or parity failed. \nError stack:\n${err.stack}`))
 
     default:
       return send(response, 404, 'Not found');
