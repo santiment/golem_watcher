@@ -25,14 +25,18 @@ const influx = new Influx.InfluxDB({
       closure_time: Influx.FieldType.INTEGER,
       block_number: Influx.FieldType.INTEGER
     },
-    tags: []
+    tags: [
+      'transaction_log_index'
+    ]
   }]
 });
 
-const writePoints = (from, to, value, closureTime, blockNumber, blockTimestamp) => {
+const writePoints = (from, to, value, closureTime, blockNumber, blockTimestamp, transactionLogIndex) => {
+  let date = new Date(blockTimestamp*1000);
+
   influx.writePoints([{
     measurement: 'transfers',
-    timestamp: blockTimestamp,
+    timestamp: date, // node-influx will handle the necessary precision
     fields: {
       from: from,
       to: to,
@@ -40,14 +44,16 @@ const writePoints = (from, to, value, closureTime, blockNumber, blockTimestamp) 
       closure_time: closureTime,
       block_number: blockNumber,
     },
-    tags: []
+    tags: {
+      transaction_log_index: transactionLogIndex,
+    }
   }]);
 }
 
 const PARITY_NODE = process.env.PARITY_URL || "http://localhost:8545";
-var web3 = new Web3(new Web3.providers.HttpProvider(PARITY_NODE));
+let web3 = new Web3(new Web3.providers.HttpProvider(PARITY_NODE));
 
-var batchTransferAbi = [{
+let batchTransferAbi = [{
   "anonymous": false,
   "inputs": [{
       "indexed": true,
@@ -74,7 +80,7 @@ var batchTransferAbi = [{
   "type": "event"
 }];
 
-var golemContract = new web3.eth.Contract(batchTransferAbi, GOLEM_CONTRACT_ADDRESS);
+let golemContract = new web3.eth.Contract(batchTransferAbi, GOLEM_CONTRACT_ADDRESS);
 
 const healthcheckInflux = () => {
   return influx.query("show measurements")
@@ -93,7 +99,8 @@ const getPastEvents = (startBlockNumber) => {
     })
     .then((events) => {
       events.forEach(function (batchTranfer) {
-        var {
+        let {
+          transactionLogIndex,
           blockNumber,
           returnValues: {
             from,
@@ -105,7 +112,7 @@ const getPastEvents = (startBlockNumber) => {
 
         web3.eth.getBlock(blockNumber) // slow
           .then((block) => {
-            writePoints(from, to, value, closureTime, blockNumber, block.timestamp)
+            writePoints(from, to, value, closureTime, blockNumber, block.timestamp, transactionLogIndex)
           })
           .catch(err => {
             console.error(`Error saving data with block number ${blockNumber} to InfluxDB! ${err.stack}`)
