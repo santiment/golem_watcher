@@ -9,6 +9,8 @@ const Influx = require('influx');
 const GOLEM_TOKEN_START_BLOCK = 5385618;
 const GOLEM_CONTRACT_ADDRESS = '0xA7dfb33234098c66FdE44907e918DAD70a3f211c'
 const GOLEM_DATABASE_NAME = 'golem_network_data'
+const GOLEM_TOKEN_DECIMALS = 18
+
 // client to the influx db
 const influx = new Influx.InfluxDB({
   host: process.env.INFLUXDB_HOST || 'localhost',
@@ -19,10 +21,9 @@ const influx = new Influx.InfluxDB({
     fields: {
       from: Influx.FieldType.STRING,
       to: Influx.FieldType.STRING,
-      value: Influx.FieldType.STRING,
+      value: Influx.FieldType.FLOAT,
       closure_time: Influx.FieldType.INTEGER,
-      block_number: Influx.FieldType.INTEGER,
-      block_timestamp: Influx.FieldType.INTEGER
+      block_number: Influx.FieldType.INTEGER
     },
     tags: []
   }]
@@ -31,13 +32,13 @@ const influx = new Influx.InfluxDB({
 const writePoints = (from, to, value, closureTime, blockNumber, blockTimestamp) => {
   influx.writePoints([{
     measurement: 'transfers',
+    timestamp: blockTimestamp,
     fields: {
       from: from,
       to: to,
-      value: value,
+      value: value / Math.pow(10, GOLEM_TOKEN_DECIMALS),
       closure_time: closureTime,
       block_number: blockNumber,
-      block_timestamp: blockTimestamp
     },
     tags: []
   }]);
