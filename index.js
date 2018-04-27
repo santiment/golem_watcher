@@ -121,7 +121,7 @@ const work = () => {
 
   influx.query("select MAX(block_number) from transfers")
     .then(blockNumberInfo => {
-      const blockNumber = blockNumberInfo[0].max || GOLEM_TOKEN_START_BLOCK
+      const blockNumber = (blockNumberInfo[0] !== undefined && blockNumberInfo[0].max) || GOLEM_TOKEN_START_BLOCK
       getPastEvents(blockNumber)
     })
     .catch(err => {
