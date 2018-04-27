@@ -33,7 +33,7 @@ $ PARITY_URL=<parity_url> npm start
 You can make healthcheck GET requests to the service. The healthcheck makes a request to InfluxDB and Parity to make sure the connection is not lost:
 
 ```bash
-curl http://localhost:3000\healthcheck
+curl http://localhost:3000/healthcheck
 ```
 
 If the healthcheck passes you get response code 200 and response message `ok`.
