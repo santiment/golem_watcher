@@ -32,7 +32,7 @@ const influx = new Influx.InfluxDB({
 });
 
 const writePoints = (from, to, value, closureTime, blockNumber, blockTimestamp, transactionLogIndex) => {
-  var date = new Date(blockTimestamp*1000);
+  let date = new Date(blockTimestamp*1000);
 
   influx.writePoints([{
     measurement: 'transfers',
@@ -51,9 +51,9 @@ const writePoints = (from, to, value, closureTime, blockNumber, blockTimestamp, 
 }
 
 const PARITY_NODE = process.env.PARITY_URL || "http://localhost:8545";
-var web3 = new Web3(new Web3.providers.HttpProvider(PARITY_NODE));
+let web3 = new Web3(new Web3.providers.HttpProvider(PARITY_NODE));
 
-var batchTransferAbi = [{
+let batchTransferAbi = [{
   "anonymous": false,
   "inputs": [{
       "indexed": true,
@@ -80,7 +80,7 @@ var batchTransferAbi = [{
   "type": "event"
 }];
 
-var golemContract = new web3.eth.Contract(batchTransferAbi, GOLEM_CONTRACT_ADDRESS);
+let golemContract = new web3.eth.Contract(batchTransferAbi, GOLEM_CONTRACT_ADDRESS);
 
 const healthcheckInflux = () => {
   return influx.query("show measurements")
@@ -99,7 +99,7 @@ const getPastEvents = (startBlockNumber) => {
     })
     .then((events) => {
       events.forEach(function (batchTranfer) {
-        var {
+        let {
           transactionLogIndex,
           blockNumber,
           returnValues: {
