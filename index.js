@@ -26,12 +26,13 @@ const influx = new Influx.InfluxDB({
       block_number: Influx.FieldType.INTEGER
     },
     tags: [
+      'transaction_index',
       'transaction_log_index'
     ]
   }]
 });
 
-const writePoints = (from, to, value, closureTime, blockNumber, blockTimestamp, transactionLogIndex) => {
+const writePoints = (from, to, value, closureTime, blockNumber, blockTimestamp, transactionIndex, transactionLogIndex) => {
   let date = new Date(blockTimestamp*1000);
 
   influx.writePoints([{
@@ -45,7 +46,8 @@ const writePoints = (from, to, value, closureTime, blockNumber, blockTimestamp, 
       block_number: blockNumber,
     },
     tags: {
-      transaction_log_index: transactionLogIndex,
+      transaction_index: transactionIndex,
+      transaction_log_index: transactionLogIndex
     }
   }]);
 }
@@ -100,6 +102,7 @@ const getPastEvents = (startBlockNumber) => {
     .then((events) => {
       events.forEach(function (batchTranfer) {
         let {
+          transactionIndex,
           transactionLogIndex,
           blockNumber,
           returnValues: {
@@ -112,7 +115,7 @@ const getPastEvents = (startBlockNumber) => {
 
         web3.eth.getBlock(blockNumber) // slow
           .then((block) => {
-            writePoints(from, to, value, closureTime, blockNumber, block.timestamp, transactionLogIndex)
+            writePoints(from, to, value, closureTime, blockNumber, block.timestamp, transactionIndex, transactionLogIndex)
           })
           .catch(err => {
             console.error(`Error saving data with block number ${blockNumber} to InfluxDB! ${err.stack}`)
