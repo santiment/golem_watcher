@@ -33,23 +33,29 @@ const influx = new Influx.InfluxDB({
 });
 
 const writePoints = (from, to, value, closureTime, blockNumber, blockTimestamp, transactionIndex, transactionLogIndex) => {
-  let date = new Date(blockTimestamp*1000);
+  let date = new Date(blockTimestamp * 1000);
 
   influx.writePoints([{
-    measurement: 'transfers',
-    timestamp: date, // node-influx will handle the necessary precision
-    fields: {
-      from: from,
-      to: to,
-      value: value / Math.pow(10, GOLEM_TOKEN_DECIMALS),
-      closure_time: closureTime,
-      block_number: blockNumber,
-    },
-    tags: {
-      transaction_index: transactionIndex,
-      transaction_log_index: transactionLogIndex
-    }
-  }]);
+      measurement: 'transfers',
+      timestamp: date, // node-influx will handle the necessary precision
+      fields: {
+        from: from,
+        to: to,
+        value: value / Math.pow(10, GOLEM_TOKEN_DECIMALS),
+        closure_time: closureTime,
+        block_number: blockNumber,
+      },
+      tags: {
+        transaction_index: transactionIndex,
+        transaction_log_index: transactionLogIndex
+      }
+    }])
+    .catch(err => {
+      console.error(
+        `Error writing points for block number ${blockNumber},
+        transaction index ${transactionIndex} and transaction log index ${transactionLogIndex}
+        to InfluxDB! ${err.stack}`)
+    });
 }
 
 const PARITY_NODE = process.env.PARITY_URL || "http://localhost:8545";
@@ -159,7 +165,13 @@ const init = () => {
 
 init()
 
+process.on('unhandledRejection', (reason, p) => {
+  // Otherwise unhandled promises are not possible to trace with the information logged
+  console.log('Unhandled Rejection at: Promise', p, 'reason:', reason, 'error stack:', reason.stack);
+});
+
 //======================================================
+
 module.exports = async (request, response) => {
   const req = url.parse(request.url, true);
   const q = req.query;
