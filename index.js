@@ -167,7 +167,8 @@ init()
 
 process.on('unhandledRejection', (reason, p) => {
   // Otherwise unhandled promises are not possible to trace with the information logged
-  console.log('Unhandled Rejection at: Promise', p, 'reason:', reason, 'error stack:', reason.stack);
+  console.error('Unhandled Rejection at: Promise', p, 'reason:', reason, 'error stack:', reason.stack);
+  process.exit(1)
 });
 
 //======================================================
