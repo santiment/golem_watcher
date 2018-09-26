@@ -129,7 +129,7 @@ const getPastEvents = (startBlockNumber) => {
       })
     })
     .catch(err => {
-      console.error(`Error getting past events since block number ${blockNumber}! ${err.stack}`)
+      console.error(`Error getting past events since starting block number ${startBlockNumber}! ${err.stack}`)
     })
 }
 
