@@ -116,15 +116,20 @@ const healthcheckParity = () => {
 
 const getPastEvents = startBlockNumber => {
   console.log(
-    `Get past events startinng from ${startBlockNumber} block number`
+    `Getting past events startinng from ${startBlockNumber} block number`
   );
 
+  let endBlockNumber = startBlockNumber + 20000;
   golemContract
     .getPastEvents("BatchTransfer", {
       fromBlock: startBlockNumber,
-      toBlock: "latest"
+      toBlock: endBlockNumber
     })
     .then(events => {
+      console.log(
+        `Got ${events &&
+          events.length} batch tarnsfer events for the block range [${startBlockNumber}, ${endBlockNumber}]}`
+      );
       events.forEach(function(batchTranfer) {
         let {
           transactionIndex,
