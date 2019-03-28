@@ -119,16 +119,15 @@ const getPastEvents = startBlockNumber => {
     `Getting past events startinng from ${startBlockNumber} block number`
   );
 
-  let endBlockNumber = startBlockNumber + 20000;
   golemContract
     .getPastEvents("BatchTransfer", {
       fromBlock: startBlockNumber,
-      toBlock: endBlockNumber
+      toBlock: "latest"
     })
     .then(events => {
       console.log(
         `Got ${events &&
-          events.length} batch tarnsfer events for the block range [${startBlockNumber}, ${endBlockNumber}]}`
+          events.length} batch tarnsfer events for the block range [${startBlockNumber}, latest]}`
       );
       events.forEach(function(batchTranfer) {
         let {
