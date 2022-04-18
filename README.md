@@ -1,3 +1,5 @@
+## THIS REPOSITORY IS ARCHIVED. IT WILL NOT BE DEVELOPED IN FUTURE
+
 # Golem Watcher
 
 A small service that queries Parity at intervals of 5 minutes and stores in InfluxDB all transfers. These transfers are extracted from the BatchTransfer event. Golem watcher is written in javascript and uses ![web3.js](https://github.com/ethereum/web3.js/) library which implements the Ethereum JSON RPC spec.
